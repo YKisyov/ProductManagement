@@ -10,10 +10,10 @@ import static java.math.RoundingMode.HALF_UP;
  */
 public class Product {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
-    private int id;
-    private String name;
-    private BigDecimal price;
-    private Rating rating;
+    private final int id;
+    private final String name;
+    private final BigDecimal price;
+    private final Rating rating;
 
     public Product(int id, String name, BigDecimal price, Rating rating) {
         this.id = id;
@@ -38,24 +38,12 @@ public class Product {
         return id;
     }
 
-    public void setId(final int id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
 
-    public void setName(final String name) {
-        this.name = name;
-    }
-
     public BigDecimal getPrice() {
         return price;
-    }
-
-    public void setPrice(final BigDecimal price) {
-        this.price = price;
     }
 
     /**
@@ -66,5 +54,8 @@ public class Product {
      */
     public BigDecimal getDiscountRate() {
         return getPrice().multiply(DISCOUNT_RARE).setScale(2, HALF_UP);
+    }
+    public Product applyRating(Rating newRating){
+        return new Product(getId(), getName(), getPrice(), newRating);
     }
 }
