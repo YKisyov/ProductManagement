@@ -7,6 +7,11 @@ import static java.math.RoundingMode.HALF_UP;
 /**
  * {@code Product} class represent a very basic concept of products and their properties and behaviors
  * it also offers {@code DISCOUNT_RATE BigDecimal} static class member that shows 10% product discount;
+ * <p>
+ * This class is abstract since v 0.6.1;
+ *
+ * @author YKisyov
+ * @version 0.6.1
  */
 public class Product {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
@@ -55,7 +60,8 @@ public class Product {
     public BigDecimal getDiscountRate() {
         return getPrice().multiply(DISCOUNT_RARE).setScale(2, HALF_UP);
     }
-    public Product applyRating(Rating newRating){
+
+    public Product applyRating(Rating newRating) {
         return new Product(getId(), getName(), getPrice(), newRating);
     }
 }
