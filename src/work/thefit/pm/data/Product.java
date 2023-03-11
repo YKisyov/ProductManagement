@@ -15,7 +15,22 @@ public class Product {
     private BigDecimal price;
     private Rating rating;
 
-    public Rating getRating()  {
+    public Product(int id, String name, BigDecimal price, Rating rating) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.rating = rating;
+    }
+
+    public Product(int id, String name, BigDecimal price) {
+        this(id, name, price, Rating.NOT_RATED);
+    }
+
+    public Product() {
+        this(0, "no-name", BigDecimal.ZERO);
+    }
+
+    public Rating getRating() {
         return rating;
     }
 
