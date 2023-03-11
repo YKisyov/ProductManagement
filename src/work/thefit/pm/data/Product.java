@@ -13,6 +13,11 @@ public class Product {
     private int id;
     private String name;
     private BigDecimal price;
+    private Rating rating;
+
+    public Rating getRating()  {
+        return rating;
+    }
 
     public int getId() {
         return id;
@@ -41,6 +46,7 @@ public class Product {
     /**
      * {@code getDiscountRate} is used to calculate the amount that has to be removed from the original Product price in
      * order to get a discount af a rate defined in DISCOUNT_RATE.
+     *
      * @return BigDecimal showing the rounded discount value based on DISCOUNT_RATE.
      */
     public BigDecimal getDiscountRate() {

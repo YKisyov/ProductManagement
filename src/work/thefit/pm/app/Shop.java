@@ -4,6 +4,10 @@ import work.thefit.pm.data.Product;
 
 import java.math.BigDecimal;
 
+
+/**
+ * {@code Shop} class is used to represent the Product Management System app.
+ */
 public class Shop {
     public static void main(String[] args) {
         Product p1 = new Product();
