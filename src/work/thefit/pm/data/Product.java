@@ -4,6 +4,10 @@ import java.math.BigDecimal;
 
 import static java.math.RoundingMode.HALF_UP;
 
+/**
+ * {@code Product} class represent a very basic concept of products and their properties and behaviors
+ * it also offers {@code DISCOUNT_RATE BigDecimal} static class member that shows 10% product discount;
+ */
 public class Product {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
     private int id;
@@ -34,7 +38,12 @@ public class Product {
         this.price = price;
     }
 
-    public BigDecimal getDiscountRare() {
+    /**
+     * {@code getDiscountRate} is used to calculate the amount that has to be removed from the original Product price in
+     * order to get a discount af a rate defined in DISCOUNT_RATE.
+     * @return BigDecimal showing the rounded discount value based on DISCOUNT_RATE.
+     */
+    public BigDecimal getDiscountRate() {
         return getPrice().multiply(DISCOUNT_RARE).setScale(2, HALF_UP);
     }
 }

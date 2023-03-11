@@ -12,6 +12,6 @@ public class Shop {
         p1.setName("Cake");
         p1.setPrice(BigDecimal.valueOf(1.99));
 
-        System.out.println(p1.getId() + " " + p1.getName() + " " + p1.getPrice() + " " + p1.getDiscountRare());
+        System.out.println(p1.getId() + " " + p1.getName() + " " + p1.getPrice() + " " + p1.getDiscountRate());
     }
 }
