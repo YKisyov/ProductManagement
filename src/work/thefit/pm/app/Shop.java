@@ -9,7 +9,7 @@ import java.time.LocalDate;
  * {@code Shop} class is used to represent the Product Management System app.
  *
  * @author YKisyov
- * @version 0.6.2
+ * @version 0.6.2.(3)
  */
 public class Shop {
     public static void main(String[] args) {

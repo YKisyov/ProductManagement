@@ -12,7 +12,7 @@ import static java.math.RoundingMode.HALF_UP;
  * This class is abstract since v 0.6.1;
  *
  * @author YKisyov
- * @version 0.6.2
+ * @version 0.6.2.(3)
  */
 public abstract class Product {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
