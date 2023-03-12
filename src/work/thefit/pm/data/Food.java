@@ -34,4 +34,14 @@ public class Food extends Product {
     public Product applyRating(Rating newRating) {
         return new Food(getId(), getName(), getPrice(), newRating, getBestBefore());
     }
+
+    /**
+     * Apply 10% discount if this is last day this food can be consumed by customers safely;
+     * @return the value of 10% discount as defined by the Product class only if the
+     * current Food type's expiration date is today.
+     */
+    @Override
+    public BigDecimal getDiscount() {
+        return getBestBefore().isEqual(LocalDate.now()) ? super.getDiscount() : BigDecimal.ZERO;
+    }
 }

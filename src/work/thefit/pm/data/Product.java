@@ -1,6 +1,7 @@
 package work.thefit.pm.data;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 import static java.math.RoundingMode.HALF_UP;
 
@@ -13,7 +14,7 @@ import static java.math.RoundingMode.HALF_UP;
  * @author YKisyov
  * @version 0.6.2
  */
-public class Product {
+public abstract class Product {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
     private final int id;
     private final String name;
@@ -62,12 +63,22 @@ public class Product {
         return getPrice().multiply(DISCOUNT_RARE).setScale(2, HALF_UP);
     }
 
-    public Product applyRating(Rating newRating) {
-        return new Product(getId(), getName(), getPrice(), newRating);
-    }
+    abstract public Product applyRating(Rating newRating);
 
     @Override
     public String toString() {
         return id + ", " + name + ", " + price + ", " + getDiscount() + ", " + rating.getStars();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Product product)) return false;
+        return id == product.id && Objects.equals(name, product.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
