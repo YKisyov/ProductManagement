@@ -11,7 +11,7 @@ import static java.math.RoundingMode.HALF_UP;
  * This class is abstract since v 0.6.1;
  *
  * @author YKisyov
- * @version 0.6.1
+ * @version 0.6.2
  */
 public class Product {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
@@ -52,16 +52,22 @@ public class Product {
     }
 
     /**
-     * {@code getDiscountRate} is used to calculate the amount that has to be removed from the original Product price in
+     * {@code getDiscount} is used to calculate the amount that has to be removed from the original Product price in
      * order to get a discount af a rate defined in DISCOUNT_RATE.
      *
-     * @return BigDecimal showing the rounded discount value based on DISCOUNT_RATE.
+     * @return BigDecimal showing the rounded-up discount value based on DISCOUNT_RATE.
      */
-    public BigDecimal getDiscountRate() {
+    public BigDecimal getDiscount() {
+
         return getPrice().multiply(DISCOUNT_RARE).setScale(2, HALF_UP);
     }
 
     public Product applyRating(Rating newRating) {
         return new Product(getId(), getName(), getPrice(), newRating);
+    }
+
+    @Override
+    public String toString() {
+        return id + ", " + name + ", " + price + ", " + getDiscount() + ", " + rating.getStars();
     }
 }

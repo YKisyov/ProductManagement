@@ -2,8 +2,8 @@ package work.thefit.pm.data;
 
 public enum Rating {
     /**
-     * "\u2606" -> ☆";
-     * "\u2605" -> ★
+     * "\u2606" stands for an empty (white) star -> ☆";
+     * "\u2605" stand for an filled (colorful) star -> ★
      */
     NOT_RATED("☆☆☆☆☆"),
     ONE_STAR("★☆☆☆☆"),
