@@ -11,9 +11,6 @@ public class Drink extends Product {
     public Drink(int id, String name, BigDecimal price, Rating rating) {
         super(id, name, price, rating);
     }
-    public Drink(int id, String name, BigDecimal price){
-        super(id, name, price, Rating.NOT_RATED);
-    }
 
     /**
      * This method calls the getDiscount of the Product class. Only if the method is executed

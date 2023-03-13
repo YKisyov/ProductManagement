@@ -10,7 +10,7 @@ public enum Rating {
 
     TWO_STAR("★★☆☆☆"),
 
-    THREE_STAT("★★★☆☆"),
+    THREE_STAR("★★★☆☆"),
 
     FOUR_STAR("★★★★☆"),
 

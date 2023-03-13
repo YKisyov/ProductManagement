@@ -1,6 +1,7 @@
 package work.thefit.pm.data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Objects;
 
 import static java.math.RoundingMode.HALF_UP;
@@ -65,9 +66,18 @@ public abstract class Product {
 
     abstract public Product applyRating(Rating newRating);
 
+    /**
+     * Get the value of the best before date for the product.*
+     *
+     * @return the value of bestBefore as LocalDate.
+     */
+    public LocalDate getBestBefore() {
+        return LocalDate.now();
+    }
+
     @Override
     public String toString() {
-        return id + ", " + name + ", " + price + ", " + getDiscount() + ", " + rating.getStars();
+        return id + ", " + name + ", " + price + ", " + getDiscount() + ", " + rating.getStars() + ", " + getBestBefore();
     }
 
     @Override
