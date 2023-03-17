@@ -11,7 +11,7 @@ import java.time.LocalDate;
 public class Food extends Product {
     private final LocalDate bestBefore;
 
-    public Food(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
+    Food(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
         super(id, name, price, rating);
         this.bestBefore = bestBefore;
     }
@@ -37,6 +37,7 @@ public class Food extends Product {
 
     /**
      * Apply 10% discount if this is last day this food can be consumed by customers safely;
+     *
      * @return the value of 10% discount as defined by the Product class only if the
      * current Food type's expiration date is today.
      */
