@@ -1,14 +1,76 @@
 package work.thefit.pm.data;
 
 import java.math.BigDecimal;
+import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
+/**
+ * Used for the Factory method pattern. Added in ver. 0.6.3;
+ *
+ * @version 0.7.1 - adds a Product and Review instance variables and inits them in the createProduct methos.
+ */
+
+/*
+TODO: A more generic (alternative) design of this application could have been used a type Ratable instead of Product
+   for both instance variables and method argument, to enable application to create reviews of any other object
+   that implements Ratable interface.
+   */
 public class ProductManager {
+
+    private Locale locale;
+    private ResourceBundle resources;
+    private DateTimeFormatter dateFormat;
+    private NumberFormat moneyFormat;
+
+
+    private Product product;
+    private Review review;
+
+    public ProductManager(Locale locale) {
+        this.locale = locale;
+        resources = ResourceBundle.getBundle("work.thefit.pm.data.resources", locale);
+        dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
+        moneyFormat = NumberFormat.getCurrencyInstance(locale);
+
+    }
+
     public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
-        return new Food(id, name, price, rating, bestBefore);
+        product = new Food(id, name, price, rating, bestBefore);
+        return product;
     }
 
     public Product createProduct(int id, String name, BigDecimal price, Rating rating) {
-        return new Drink(id, name, price, rating);
+        product = new Drink(id, name, price, rating);
+        return product;
+    }
+
+    public Product reviewProduct(Product product, Rating rating, String commands) {
+        review = new Review(rating, commands);
+        this.product = product.applyRating(rating);
+        return this.product;
+    }
+
+    public void printProductReport() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(MessageFormat.format(resources.getString("product"),
+                product.getName(),
+                moneyFormat.format(product.getPrice()),
+                product.getRating().getStars(),
+                dateFormat.format(product.getBestBefore())));
+        sb.append('\n');
+        if (review != null) {
+            sb.append(MessageFormat.format(resources.getString("review"),
+                    review.getRating().getStars(),
+                    review.getComments()));
+        } else {
+            sb.append(resources.getString("no.reviews"));
+        }
+        sb.append('\n');
+        System.out.println(sb);
     }
 }
