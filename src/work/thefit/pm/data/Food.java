@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 /**
  * @author YKisyov
- * @version 0.6.2.(3)
+ * @version 0.7.1
  */
 public class Food extends Product {
     private final LocalDate bestBefore;

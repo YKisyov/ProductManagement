@@ -13,9 +13,9 @@ import static java.math.RoundingMode.HALF_UP;
  * This class is abstract since v 0.6.1;
  *
  * @author YKisyov
- * @version 0.6.2.(3)
+ * @version 0.7.1
  */
-public abstract class Product {
+public abstract class Product implements Ratable<Product> {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
     private final int id;
     private final String name;
@@ -33,6 +33,7 @@ public abstract class Product {
         this(id, name, price, Rating.NOT_RATED);
     }
 
+    @Override
     public Rating getRating() {
         return rating;
     }
@@ -59,8 +60,6 @@ public abstract class Product {
 
         return getPrice().multiply(DISCOUNT_RARE).setScale(2, HALF_UP);
     }
-
-    abstract public Product applyRating(Rating newRating);
 
     /**
      * Get the value of the best before date for the product.*

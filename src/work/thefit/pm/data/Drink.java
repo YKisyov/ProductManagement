@@ -5,7 +5,7 @@ import java.time.LocalTime;
 
 /**
  * @author YKisyov
- * @version 0.6.2(3)
+ * @version 0.7.1
  */
 public class Drink extends Product {
     Drink(int id, String name, BigDecimal price, Rating rating) {
