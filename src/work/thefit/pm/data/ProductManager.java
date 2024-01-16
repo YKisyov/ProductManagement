@@ -13,7 +13,7 @@ import java.util.ResourceBundle;
 /**
  * Used for the Factory method pattern. Added in ver. 0.6.3;
  *
- * @version 0.7.2 - adds a Product and Review instance variables and inits them in the createProduct methos.
+ * @version 0.7.2 - adds a Product and Review instance variables and inits them in the createProduct methods.
  */
 
 /*
@@ -51,7 +51,7 @@ public class ProductManager {
         return product;
     }
 
-    public Product reviewProduct(Product product, Rating rating, String commands) {
+    public Product reviewProduct(Product product, Rating rating, String coments) {
         if (reviewsArr[reviewsArr.length - 1] != null) {
             reviewsArr = Arrays.copyOf(reviewsArr, reviewsArr.length + INCREMENT_STEP);
         }
@@ -60,7 +60,7 @@ public class ProductManager {
 
         while (currentReviewNumber < reviewsArr.length && !isReviewed) {
             if (reviewsArr[currentReviewNumber] == null) {
-                reviewsArr[currentReviewNumber] = new Review(rating, commands);
+                reviewsArr[currentReviewNumber] = new Review(rating, coments);
                 isReviewed = true;
             }
             sumOfRatingValuesInStars += reviewsArr[currentReviewNumber].getRating().ordinal();
