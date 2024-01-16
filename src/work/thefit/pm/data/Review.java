@@ -5,6 +5,7 @@ package work.thefit.pm.data;
  * This class will hold the review data like Rating and comments.
  * This class is immutable, so no setter methods!
  * @version 0.7.2
+ *
  */
 public class Review {
     private Rating rating;

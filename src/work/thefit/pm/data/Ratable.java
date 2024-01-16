@@ -1,7 +1,7 @@
 package work.thefit.pm.data;
 
 /**
- * @param <T> used to extend the use of Ratable, so later on things like Shops and cashes and what not could be rated.
+ * @param <T> used to extend the use of Ratable, so later on things like Shops and cashiers and what not could be rated.
  */
 
 @FunctionalInterface

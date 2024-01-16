@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import static java.math.RoundingMode.HALF_UP;
 
+
 /**
  * {@code Product} class represent a very basic concept of products and their properties and behaviors
  * it also offers {@code DISCOUNT_RATE BigDecimal} static class member that shows 10% product discount;

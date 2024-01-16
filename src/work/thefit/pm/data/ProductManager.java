@@ -6,13 +6,14 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
  * Used for the Factory method pattern. Added in ver. 0.6.3;
  *
- * @version 0.7.1 - adds a Product and Review instance variables and inits them in the createProduct methos.
+ * @version 0.7.2 - adds a Product and Review instance variables and inits them in the createProduct methos.
  */
 
 /*
@@ -29,7 +30,8 @@ public class ProductManager {
 
 
     private Product product;
-    private Review review;
+    private final int INCREMENT_STEP = 5;
+    private Review[] reviewsArr = new Review[INCREMENT_STEP];
 
     public ProductManager(Locale locale) {
         this.locale = locale;
@@ -50,8 +52,22 @@ public class ProductManager {
     }
 
     public Product reviewProduct(Product product, Rating rating, String commands) {
-        review = new Review(rating, commands);
-        this.product = product.applyRating(rating);
+        if (reviewsArr[reviewsArr.length - 1] != null) {
+            reviewsArr = Arrays.copyOf(reviewsArr, reviewsArr.length + INCREMENT_STEP);
+        }
+        int sumOfRatingValuesInStars = 0, currentReviewNumber = 0;
+        boolean isReviewed = false;
+
+        while (currentReviewNumber < reviewsArr.length && !isReviewed) {
+            if (reviewsArr[currentReviewNumber] == null) {
+                reviewsArr[currentReviewNumber] = new Review(rating, commands);
+                isReviewed = true;
+            }
+            sumOfRatingValuesInStars += reviewsArr[currentReviewNumber].getRating().ordinal();
+            currentReviewNumber++;
+        }
+        int avgRating = Math.round(sumOfRatingValuesInStars / (float) currentReviewNumber);
+        this.product = product.applyRating(avgRating);
         return this.product;
     }
 
@@ -63,14 +79,21 @@ public class ProductManager {
                 product.getRating().getStars(),
                 dateFormat.format(product.getBestBefore())));
         sb.append('\n');
-        if (review != null) {
+
+        for (Review review : reviewsArr) {
+            if (review == null) {
+                break;
+            }
             sb.append(MessageFormat.format(resources.getString("review"),
                     review.getRating().getStars(),
                     review.getComments()));
-        } else {
-            sb.append(resources.getString("no.reviews"));
+            sb.append('\n');
         }
-        sb.append('\n');
+        if (reviewsArr[0] == null) {
+            sb.append(resources.getString("no.reviews"));
+            sb.append("\n");
+        }
         System.out.println(sb);
     }
 }
+
