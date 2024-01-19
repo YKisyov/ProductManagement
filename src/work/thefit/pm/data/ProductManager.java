@@ -63,6 +63,10 @@ public class ProductManager {
         return product;
     }
 
+    public Product reviewProduct(int productID, Rating rating, String comments) {
+        return reviewProduct(findProduct(productID), rating, comments);
+    }
+
     public Product reviewProduct(Product product, Rating rating, String comments) {
 
         /*
@@ -102,6 +106,21 @@ public class ProductManager {
         return updatedProduct;
     }
 
+    public Product findProduct(int id) {
+        Product searchedProduct = null;
+        for (Product currProduct : products.keySet()) {
+            if (currProduct.getId() == id) {
+                searchedProduct = currProduct;
+                break;
+            }
+        }
+        return searchedProduct;
+    }
+
+    public void printProductReport(int productId) {
+        printProductReport(findProduct(productId));
+    }
+
     public void printProductReport(Product product) {
 
         //TODO figure out what shall we do in case null is returned by the products.get(product) call
@@ -115,6 +134,7 @@ public class ProductManager {
                 dateFormat.format(product.getBestBefore())));
         sb.append(System.lineSeparator());
 
+        Collections.sort(listOfReviews);
         for (Review currReview : listOfReviews) {
             sb.append(MessageFormat.format(resources.getString("review"),
                     currReview.getRating().getStars(),
