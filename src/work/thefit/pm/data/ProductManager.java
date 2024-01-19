@@ -65,10 +65,19 @@ public class ProductManager {
 
     public Product reviewProduct(Product product, Rating rating, String comments) {
 
-        List<Review> listOfCurrentReviews = products.get(product);
+        /*
+         * As all keys in our design are immutable, we will have to update the key. This is needed due to the fact,
+         * that applyRating() method of the Product class actually uses the average of all ratings and store the value
+         * as Product member. Since Products are immutable, the updated average rating can come to live only via
+         * new instance of the old state of the object.
+         * This is why we 1st remove the old state of the KEY product and later on put it back in the Map.
+         */
+
+        List<Review> listOfCurrentReviews = products.remove(product);
 
         /*
-         * Later on shall be re-implemented via "throws"
+         * TODO Later on shall be re-implemented via "throws"
+         *
          * */
         if (listOfCurrentReviews == null) {
             System.out.println("ERROR! Our system can not find the product you are trying to review.\n" +
@@ -79,42 +88,42 @@ public class ProductManager {
 
         listOfCurrentReviews.add(new Review(rating, comments));
 
-        int sumOfStarts = 0, avgRating = 0, reviewsCounter = listOfCurrentReviews.size();
+        int sumOfStarts = 0, avgRating = 0;
+        int reviewsCounter = listOfCurrentReviews.size();
+
         for (Review currReview : listOfCurrentReviews) {
             sumOfStarts += currReview.getRating().ordinal();
         }
         avgRating = Math.round(sumOfStarts / (float) reviewsCounter);
         Product updatedProduct = product.applyRating(avgRating);
 
-        //overwrite the old product with the new one, due to the immutability of the Product line design.
-        products.remove(product);
+        //putting the new product as new key in the map.
         products.put(updatedProduct, listOfCurrentReviews);
-
         return updatedProduct;
     }
 
-    public void printProductReport() {
+    public void printProductReport(Product product) {
+
+        //TODO figure out what shall we do in case null is returned by the products.get(product) call
+        List<Review> listOfReviews = products.get(product);
+
         StringBuilder sb = new StringBuilder();
         sb.append(MessageFormat.format(resources.getString("product"),
                 product.getName(),
                 moneyFormat.format(product.getPrice()),
                 product.getRating().getStars(),
                 dateFormat.format(product.getBestBefore())));
-        sb.append('\n');
+        sb.append(System.lineSeparator());
 
-        if (reviewsArr[0] == null) {
+        for (Review currReview : listOfReviews) {
+            sb.append(MessageFormat.format(resources.getString("review"),
+                    currReview.getRating().getStars(),
+                    currReview.getComments()));
+            sb.append(System.lineSeparator());
+        }
+        if (listOfReviews.isEmpty()) {
             sb.append(resources.getString("no.reviews"));
-            sb.append("\n");
-        } else {
-            for (Review review : reviewsArr) {
-                if (review == null) {
-                    break;
-                }
-                sb.append(MessageFormat.format(resources.getString("review"),
-                        review.getRating().getStars(),
-                        review.getComments()));
-                sb.append('\n');
-            }
+            sb.append(System.lineSeparator());
         }
 
         System.out.println(sb);

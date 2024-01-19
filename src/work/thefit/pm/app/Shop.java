@@ -25,18 +25,22 @@ public class Shop {
         ProductManager pmJP = new ProductManager(locJP);
 
         Product p1 = pmBG.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
-        pmBG.printProductReport();
+        pmBG.printProductReport(p1);
         p1 = pmBG.reviewProduct(p1, Rating.FOUR_STAR, "Nice hot cup of tea");
         p1 = pmBG.reviewProduct(p1, Rating.TWO_STAR, "Rather weak tea");
         p1 = pmBG.reviewProduct(p1, Rating.FOUR_STAR, "Fine tea");
         p1 = pmBG.reviewProduct(p1, Rating.FOUR_STAR, "Good tea");
         p1 = pmBG.reviewProduct(p1, Rating.FIVE_STAR, "Perfect tea");
         p1 = pmBG.reviewProduct(p1, Rating.THREE_STAR, "Just add some lemon");
-        pmBG.printProductReport();
-        pmEN.reviewProduct(p1, Rating.FIVE_STAR, "Awesome tea");
-        pmEN.printProductReport();
-        pmJP.reviewProduct(p1, Rating.FIVE_STAR, "Awesome tea");
-        pmJP.printProductReport();
+        pmBG.printProductReport(p1);
+
+        Product p2 = pmEN.createProduct(201, "Coca-Cola", BigDecimal.valueOf(0.99), Rating.NOT_RATED);
+        pmEN.reviewProduct(p2, Rating.FIVE_STAR, "Awesome drink");
+        pmEN.printProductReport(p2);
+
+        Product p3 = pmJP.createProduct(404, "kombucha", BigDecimal.valueOf(797.195), Rating.NOT_RATED);
+        pmJP.reviewProduct(p3, Rating.FIVE_STAR, "Refreshing as always! (いつものようにリフレッシュ)[“itsumo no you ni reflesh”]");
+        pmJP.printProductReport(p3);
     }
 
 
