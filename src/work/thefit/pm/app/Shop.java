@@ -4,8 +4,7 @@ import work.thefit.pm.data.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.Comparator;
 
 /**
  * {@code Shop} class is used to represent the Product Management System app.
@@ -16,78 +15,68 @@ import java.util.Locale;
 public class Shop {
     public static void main(String[] args) {
 
-        Locale locBG = new Locale("bg", "BG");
-        Locale locEN = new Locale("en", "GB");
-        Locale locJP = new Locale("ja", "JP");
-        ProductManager pmBG = new ProductManager(locBG);
-        ProductManager pmEN = new ProductManager(locEN);
-        ProductManager pmJP = new ProductManager(locJP);
+        ProductManager pm = new ProductManager("bg-BG");
 
-        pmEN.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
-        pmEN.printProductReport(101);
+        pm.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
 
-        pmEN.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
-        pmEN.reviewProduct(101, Rating.TWO_STAR, "Nice hot cup of tea");
-        pmEN.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
-        pmEN.reviewProduct(101, Rating.TWO_STAR, "Rather weak tea");
-        pmEN.reviewProduct(101, Rating.FOUR_STAR, "Fine tea");
-        pmEN.reviewProduct(101, Rating.FOUR_STAR, "Good tea");
-        pmEN.reviewProduct(101, Rating.FIVE_STAR, "Perfect tea");
-        pmEN.reviewProduct(101, Rating.THREE_STAR, "Just add some lemon");
-        pmEN.printProductReport(101);
+        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
+        pm.reviewProduct(101, Rating.TWO_STAR, "Nice hot cup of tea");
+        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
+        pm.reviewProduct(101, Rating.TWO_STAR, "Rather weak tea");
+        pm.reviewProduct(101, Rating.FOUR_STAR, "Fine tea");
+        pm.reviewProduct(101, Rating.FOUR_STAR, "Good tea");
+        pm.reviewProduct(101, Rating.FIVE_STAR, "Perfect tea");
+        pm.reviewProduct(101, Rating.THREE_STAR, "Just add some lemon");
 
-        pmEN.createProduct(102, "Coffee", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
-        pmEN.reviewProduct(102, Rating.THREE_STAR, "Coffee was OK");
-        pmEN.reviewProduct(102, Rating.ONE_STAR, "Where is the milk?!");
-        pmEN.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
-        pmEN.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
-        pmEN.printProductReport(102);
+        pm.createProduct(102, "Coffee", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
+        pm.reviewProduct(102, Rating.THREE_STAR, "Coffee was OK");
+        pm.reviewProduct(102, Rating.ONE_STAR, "Where is the milk?!");
+        pm.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
+        pm.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
 
-        pmEN.createProduct(103, "Cake", BigDecimal.valueOf(3.99), Rating.NOT_RATED, LocalDate.now().plusDays(2));
-        pmEN.reviewProduct(103, Rating.FIVE_STAR, "Very nice cake");
-        pmEN.reviewProduct(103, Rating.FOUR_STAR, "It is good, but I've expected more chocolate");
-        pmEN.reviewProduct(103, Rating.FIVE_STAR, "Tis cake is perfect");
-        pmEN.printProductReport(103);
+        pm.createProduct(103, "Cake", BigDecimal.valueOf(3.99), Rating.NOT_RATED, LocalDate.now().plusDays(2));
+        pm.reviewProduct(103, Rating.FIVE_STAR, "Very nice cake");
+        pm.reviewProduct(103, Rating.FOUR_STAR, "It is good, but I've expected more chocolate");
+        pm.reviewProduct(103, Rating.FIVE_STAR, "Tis cake is perfect");
 
-        pmEN.createProduct(104, "Cookie", BigDecimal.valueOf(2.5), Rating.NOT_RATED, LocalDate.now());
-        pmEN.reviewProduct(104, Rating.THREE_STAR, "Just another cookie");
-        pmEN.reviewProduct(104, Rating.THREE_STAR, "OK");
-        pmEN.reviewProduct(104, Rating.THREE_STAR, "OK");
-        pmEN.printProductReport(104);
+        pm.createProduct(104, "Cookie", BigDecimal.valueOf(2.5), Rating.NOT_RATED, LocalDate.now());
+        pm.reviewProduct(104, Rating.THREE_STAR, "Just another cookie");
+        pm.reviewProduct(104, Rating.THREE_STAR, "OK");
+        pm.reviewProduct(104, Rating.THREE_STAR, "OK");
 
-        pmEN.createProduct(105, "Hot Chocolate", BigDecimal.valueOf(2.5), Rating.NOT_RATED);
-        pmEN.reviewProduct(105, Rating.FOUR_STAR, "Tasty!");
-        pmEN.reviewProduct(105, Rating.FOUR_STAR, "Not bad at all");
-        pmEN.printProductReport(105);
+        pm.createProduct(105, "Hot Chocolate", BigDecimal.valueOf(2.5), Rating.NOT_RATED);
+        pm.reviewProduct(105, Rating.FOUR_STAR, "Tasty!");
+        pm.reviewProduct(105, Rating.FOUR_STAR, "Not bad at all");
 
-        pmEN.createProduct(106, "Chocolate", BigDecimal.valueOf(2.5), Rating.NOT_RATED, LocalDate.now().plusDays(3));
-        pmEN.reviewProduct(106, Rating.TWO_STAR, "Two sweet");
-        pmEN.reviewProduct(106, Rating.THREE_STAR, "Better than cookie");
-        pmEN.reviewProduct(106, Rating.TWO_STAR, "Too bitter");
-        pmEN.reviewProduct(106, Rating.ONE_STAR, "I don't get it!");
-        pmEN.printProductReport(106);
+        pm.createProduct(106, "Chocolate", BigDecimal.valueOf(2.5), Rating.NOT_RATED, LocalDate.now().plusDays(3));
+        pm.reviewProduct(106, Rating.TWO_STAR, "Two sweet");
+        pm.reviewProduct(106, Rating.THREE_STAR, "Better than cookie");
+        pm.reviewProduct(106, Rating.TWO_STAR, "Too bitter");
+        pm.reviewProduct(106, Rating.ONE_STAR, "I don't get it!");
 
-        String[] textArr = {"Bla, Bla"};
-        Arrays.asList(textArr);
+        pm.createProduct(107, "Cake", BigDecimal.valueOf(0.5), Rating.NOT_RATED, LocalDate.now().plusDays(3));
+        pm.reviewProduct(107, Rating.FIVE_STAR, "Very tasty for the price!");
+        pm.reviewProduct(107, Rating.FIVE_STAR, "Very good");
+        pm.reviewProduct(107, Rating.FIVE_STAR, "Too bad that I purchased the whole box");
 
-        /*Product p1 = pmBG.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
-        pmBG.printProductReport(p1);
-        p1 = pmBG.reviewProduct(p1, Rating.FOUR_STAR, "Nice hot cup of tea");
-        p1 = pmBG.reviewProduct(p1, Rating.TWO_STAR, "Rather weak tea");
-        p1 = pmBG.reviewProduct(p1, Rating.FOUR_STAR, "Fine tea");
-        p1 = pmBG.reviewProduct(p1, Rating.FOUR_STAR, "Good tea");
-        p1 = pmBG.reviewProduct(p1, Rating.FIVE_STAR, "Perfect tea");
-        p1 = pmBG.reviewProduct(p1, Rating.THREE_STAR, "Just add some lemon");
-        pmBG.printProductReport(p1);
+        //        String[] localeArr = {"en-GB", "bg-BG", "ja-JP"};
+        //        for (int i = 0; i < localeArr.length; i++) {
+        //            pm.changeLocale(localeArr[i]);
+        //            System.out.println("-=:: Locale is now Japanese ::=-");
+        //            for (int j = 1; j <= 6; j++) {
+        //                pm.printProductReport(100 + j);
+        //            }
+        //        }
 
-        Product p2 = pmEN.createProduct(201, "Coca-Cola", BigDecimal.valueOf(0.99), Rating.NOT_RATED);
-        pmEN.reviewProduct(p2, Rating.FIVE_STAR, "Awesome drink");
-        pmEN.printProductReport(p2);
+        //Some lambda comparators
+        Comparator<Product> sortById = (p1, p2) -> p1.getId() - p2.getId();
+        Comparator<Product> sortByName = (p1, p2) -> p1.getName().compareTo(p2.getName());
+        Comparator<Product> sortByPrice = (p1, p2) -> (p1.getPrice().subtract(p2.getPrice())).intValue();
+        Comparator<Product> sortByRating = (p1, p2) -> p1.getPrice().compareTo(p2.getPrice());
+        Comparator<Product> sortByBestBefore = (p1, p2) -> p1.getBestBefore().compareTo(p2.getBestBefore());
 
-        Product p3 = pmJP.createProduct(404, "kombucha", BigDecimal.valueOf(797.195), Rating.NOT_RATED);
-        pmJP.reviewProduct(p3, Rating.FIVE_STAR, "Refreshing as always! (いつものようにリフレッシュ)[“itsumo no you ni reflesh”]");
-        pmJP.printProductReport(p3);*/
+        pm.printProduct(sortByName.thenComparing(sortByPrice.reversed()));
+
     }
-
 
 }

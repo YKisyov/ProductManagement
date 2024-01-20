@@ -11,11 +11,15 @@ import java.util.*;
 /**
  * Used for the Factory method pattern. Added in ver. 0.6.3;
  *
- * @version 0.9.0 - Adding HashMap to keep a single instance of each Product as key and an ArrayList for storing all Reviews.
- * The reviewsArr[] is going to be deprecated as of now on and will be completely removed from the app design.
- * Removed the logic for extending the reviews[] array from the reviewProduct(), thus INCRIMENT_STEP is also removed, as
- * its services won't be needed any more. Now we will have an List<Review> and the Java Collections' API will take care for
- * all the housekeeping and serving the Review's entity.
+ * @version 0.10.0 - Here we are going to try to segregate the business logic from the locale/print
+ * logic needed for displaying the data. In order to do so, I am going to implement an inner
+ * class - it will be private, nested class with name ResourceFormatter. The main purpose
+ * of the ResourceFormatter inner class will be to split the business logic from the Formatting
+ * logic and do some sort of housekeeping and organizing the Product class in more maintainable
+ * manner. On top of that, we plan to add some more sorting version via lambda functions and
+ * method referenced.
+ * While this update is minor and does not intend to introduce new features, it will make
+ * the code a bit more organized and structured.
  */
 
 /*
@@ -25,30 +29,52 @@ TODO: A more generic (alternative) design of this application could have been us
    */
 public class ProductManager {
 
-    private Locale locale;
-    private ResourceBundle resources;
-    private DateTimeFormatter dateFormat;
-    private NumberFormat moneyFormat;
-    private Map<Product, List<Review>> products = new HashMap<>();
-
 
     /*
-     * Deprecated as of ver. 0.9.0.
-     * Code to be completely removed in the near future.
-     *
-     * private Product product;
-     * private Review[] reviewsArr = new Review[INCREMENT_STEP];
-     * private final int INCREMENT_STEP = 5;
-     *
+     * TsODO check if this can be implemented eventually via ENUM and moved to Shop class,
+     *  as locale data is generally a specific feature (problem of the shop, as shops are
+     *  bounded to specific regions and nations, that use different locales). Any ways, will
+     *  leave this here to think about it...
      * */
 
+    private ResourceFormatter formatter;
+    private static final Map<String, ResourceFormatter> formatters = Map.of(
+            "en-GB", new ResourceFormatter(new Locale("en", "GB")),
+            "en-US", new ResourceFormatter(new Locale("en", "US")),
+            "bg-BG", new ResourceFormatter(new Locale("bg", "BG")),
+            "ja-JP", new ResourceFormatter(new Locale("ja", "JP"))
+    );
+    private Map<Product, List<Review>> products = new HashMap<>();
+
+    /**
+     * Method {@Link changeLocale(String languageTag)} is used to change the current locale of the ProductManager class.
+     *
+     * @param languageTag shall be a String in the format of two lower case letters, representing the country code of the
+     *                    requested locale, imitatively followed by an underscore symbol and then two uppercase letters that represent the
+     *                    country. For example "en-GB" will return English local and formatting specific for Great Britain.
+     * @Since version 0.10.0;
+     */
+    public void changeLocale(String languageTag) {
+        this.formatter = formatters.getOrDefault(languageTag, formatters.get("en-GB"));
+    }
+
+    /**
+     * This method is used to ask the {@Link ProductManager} what are the supported locales.
+     *
+     * @return a set of all supported locales.
+     * @since version 0.10.0;
+     */
+    public static Set<String> getSupportedLocales() {
+        return formatters.keySet();
+    }
 
     public ProductManager(Locale locale) {
-        this.locale = locale;
-        resources = ResourceBundle.getBundle("work.thefit.pm.data.resources", locale);
-        dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
-        moneyFormat = NumberFormat.getCurrencyInstance(locale);
+        // my own code was like this: changeLocale(locale.getLanguage() + "_" + locale.getCountry());
+        this(locale.toLanguageTag());
+    }
 
+    public ProductManager(String languageTag) {
+        changeLocale(languageTag);
     }
 
     public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
@@ -127,26 +153,74 @@ public class ProductManager {
         List<Review> listOfReviews = products.get(product);
 
         StringBuilder sb = new StringBuilder();
-        sb.append(MessageFormat.format(resources.getString("product"),
-                product.getName(),
-                moneyFormat.format(product.getPrice()),
-                product.getRating().getStars(),
-                dateFormat.format(product.getBestBefore())));
+        sb.append(formatter.formatProduct(product));
         sb.append(System.lineSeparator());
 
         Collections.sort(listOfReviews);
         for (Review currReview : listOfReviews) {
-            sb.append(MessageFormat.format(resources.getString("review"),
-                    currReview.getRating().getStars(),
-                    currReview.getComments()));
+            sb.append(formatter.formatReview(currReview));
             sb.append(System.lineSeparator());
         }
         if (listOfReviews.isEmpty()) {
-            sb.append(resources.getString("no.reviews"));
+            sb.append(formatter.getText("no.reviews"));
             sb.append(System.lineSeparator());
         }
 
         System.out.println(sb);
+    }
+
+    public void printProduct(Comparator<Product> sorter) {
+        List<Product> productList = new ArrayList<>(products.keySet());
+        productList.sort(sorter);
+        StringBuilder sb = new StringBuilder();
+        for (Product product : productList) {
+            sb.append(product);
+            sb.append(System.lineSeparator());
+        }
+
+        System.out.println(sb);
+    }
+
+    private static class ResourceFormatter {
+        private Locale locale;
+        private ResourceBundle resources;
+        private DateTimeFormatter dateFormat;
+        private NumberFormat moneyFormat;
+
+        private ResourceFormatter(Locale locale) {
+            this.locale = locale;
+            resources = ResourceBundle.getBundle("work.thefit.pm.data.resources", locale);
+            dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
+            moneyFormat = NumberFormat.getCurrencyInstance(locale);
+        }
+
+        private String formatProduct(Product product) {
+            return MessageFormat.format(resources.getString("product"),
+                    product.getName(),
+                    moneyFormat.format(product.getPrice()),
+                    product.getRating().getStars(),
+                    dateFormat.format(product.getBestBefore()));
+        }
+
+        private String formatReview(Review review) {
+            return MessageFormat.format(resources.getString("review"),
+                    review.getRating().getStars(),
+                    review.getComments());
+        }
+
+        /**
+         * Gets you out any text from the resource bundle files, that does not require any formatting or substitutions.
+         *
+         * @param key is used to search through the resource bundles file and find a matching key.
+         *            Once found it will return the value that's held for that key. For example
+         *            the last line of the default resource bundle has "no.reviews=Not reviewed".
+         *            If you call this method and pass the "no.review" as argument, the method will return the
+         *            "Not reviewed" or whatever value the concrete locale file has for this key.
+         * @return the value that's associated with that key as per resource bundle file.
+         */
+        private String getText(String key) {
+            return resources.getString(key);
+        }
     }
 }
 
