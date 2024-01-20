@@ -18,10 +18,18 @@ public class Main {
         menu.add(pm.createProduct(300, "Sprite", BigDecimal.valueOf(2.59), Rating.NOT_RATED));
 
         menu.removeIf(new LongProductsNamesPredicate());
-        for (Product p: menu){
+        for (Product p : menu) {
             System.out.println(p.getName());
         }
 
+        List<String> myList = Arrays.asList("Test999", "AAA", "aaa", "Lambdazzz", "z");
+        myList.sort((s1, s2) -> s1.length() - s2.length());
+        //Make a real list that can change its size and remove/add methods does not throw UnsupportedOperationException
+        ArrayList<String> trueList = new ArrayList<>(myList);
+
+        System.out.println("True list looks like: " + trueList);
+        trueList.removeIf(s1 -> s1.length() <= 2);
+        System.out.println("Here is how the trueList looks like after the removeIf() was applied " + trueList);
 
         String[] namesArr = {"Marry", "Jane", "Elizabeth", "Jo"};
         Arrays.sort(namesArr, new Compare());
