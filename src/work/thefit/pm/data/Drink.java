@@ -24,8 +24,8 @@ public class Drink extends Product {
     @Override
     public BigDecimal getDiscount() {
         final LocalTime CURRENT_TIME = LocalTime.now();
-        final LocalTime HAPPY_HOUR_STARTS_AT = LocalTime.of(16, 30);
-        final LocalTime HAPPY_HOUR_ENDS_AT = LocalTime.of(17, 30);
+        final LocalTime HAPPY_HOUR_STARTS_AT = LocalTime.of(17, 30);
+        final LocalTime HAPPY_HOUR_ENDS_AT = LocalTime.of(18, 30);
         final boolean isHappyHour = CURRENT_TIME.isAfter(HAPPY_HOUR_STARTS_AT)
                 && CURRENT_TIME.isBefore(HAPPY_HOUR_ENDS_AT);
 

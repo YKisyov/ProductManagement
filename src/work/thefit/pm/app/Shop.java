@@ -5,6 +5,7 @@ import work.thefit.pm.data.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.function.Predicate;
 
 /**
  * {@code Shop} class is used to represent the Product Management System app.
@@ -59,14 +60,14 @@ public class Shop {
         pm.reviewProduct(107, Rating.FIVE_STAR, "Very good");
         pm.reviewProduct(107, Rating.FIVE_STAR, "Too bad that I purchased the whole box");
 
-        //        String[] localeArr = {"en-GB", "bg-BG", "ja-JP"};
-        //        for (int i = 0; i < localeArr.length; i++) {
-        //            pm.changeLocale(localeArr[i]);
-        //            System.out.println("-=:: Locale is now Japanese ::=-");
-        //            for (int j = 1; j <= 6; j++) {
-        //                pm.printProductReport(100 + j);
-        //            }
-        //        }
+        String[] localeArr = {"en-GB", "bg-BG", "ja-JP"};
+        for (int i = 0; i < localeArr.length; i++) {
+            pm.changeLocale(localeArr[i]);
+            System.out.println("-=:: Locale is now Japanese ::=-");
+            for (int j = 1; j <= 6; j++) {
+                pm.printProductReport(100 + j);
+            }
+        }
 
         //Some lambda comparators
         Comparator<Product> sortById = (p1, p2) -> p1.getId() - p2.getId();
@@ -75,7 +76,11 @@ public class Shop {
         Comparator<Product> sortByRating = (p1, p2) -> p1.getPrice().compareTo(p2.getPrice());
         Comparator<Product> sortByBestBefore = (p1, p2) -> p1.getBestBefore().compareTo(p2.getBestBefore());
 
-        pm.printProduct(sortByName.thenComparing(sortByPrice.reversed()));
+        Predicate<Product> filterDrinksAndFood = product -> product instanceof Drink || product instanceof Food;
+
+        pm.changeLocale("en-UK");
+        pm.printProduct(filterDrinksAndFood, sortByName.thenComparing(sortByPrice.reversed()));
+        pm.getDiscounts().forEach((ratingKey, avgDiscount) -> System.out.println(ratingKey + " \t" + avgDiscount));
 
     }
 
