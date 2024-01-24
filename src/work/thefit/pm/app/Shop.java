@@ -19,17 +19,22 @@ public class Shop {
         ProductManager pm = new ProductManager("bg-BG");
 
         pm.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
+        pm.printProductReport(101);
+       // pm.parseReview("xx,1,Nice hot cup of tea");
+        pm.parseProduct("Xzz,103,Cake,4,Sweet as grandma's cake,2028-12-39");
+        pm.printProductReport(103);
 
-        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
+
+/*        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
         pm.reviewProduct(101, Rating.TWO_STAR, "Nice hot cup of tea");
         pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
         pm.reviewProduct(101, Rating.TWO_STAR, "Rather weak tea");
         pm.reviewProduct(101, Rating.FOUR_STAR, "Fine tea");
         pm.reviewProduct(101, Rating.FOUR_STAR, "Good tea");
         pm.reviewProduct(101, Rating.FIVE_STAR, "Perfect tea");
-        pm.reviewProduct(101, Rating.THREE_STAR, "Just add some lemon");
+        pm.reviewProduct(101, Rating.THREE_STAR, "Just add some lemon");*/
 
-        pm.createProduct(102, "Coffee", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
+ /*       pm.createProduct(102, "Coffee", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
         pm.reviewProduct(102, Rating.THREE_STAR, "Coffee was OK");
         pm.reviewProduct(102, Rating.ONE_STAR, "Where is the milk?!");
         pm.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
@@ -81,7 +86,8 @@ public class Shop {
         pm.changeLocale("en-UK");
         pm.printProduct(filterDrinksAndFood, sortByName.thenComparing(sortByPrice.reversed()));
         pm.getDiscounts().forEach((ratingKey, avgDiscount) -> System.out.println(ratingKey + " \t" + avgDiscount));
-
+        pm.printProductReport(101);
+*/
     }
 
 }
