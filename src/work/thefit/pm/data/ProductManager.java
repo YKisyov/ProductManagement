@@ -404,7 +404,7 @@ public class ProductManager {
 
     }
 
-    public void dumpData() {
+    private void dumpData() {
         //TODO: 1) convert the object into ByteArray[] for instance using the ByteArrayOutputStream
         //TODO: 2) Append some TAG ID that will show  type of the object and the generics it was using.
         //TODO: 2.1) Maybe adding some header with that tag.
@@ -430,7 +430,7 @@ public class ProductManager {
 
 
     @SuppressWarnings("unchecked")
-    public void restoreData() {
+    private void restoreData() {
         try {
             Path tempFile = Files.list(tempFolder)
                     .filter(files -> files.getFileName().toString().endsWith(".tmp"))

@@ -22,9 +22,6 @@ public class Shop {
 
         ProductManager pm = new ProductManager("en-GB");
 
-        pm.dumpData();
-        pm.restoreData();
-
         pm.printProductReport(101);
         pm.printProductReport(102);
         pm.printProductReport(103);
