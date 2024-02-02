@@ -1,33 +1,46 @@
 package work.thefit.pm.playGround;
 
-import java.util.*;
+
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
 
-        String[] namesArr = {"Marry", "Jane", "Elizabeth", "Jo"};
-        Arrays.sort(namesArr, new Compare());
+        ProductMocker productMocker = new ProductMocker(1, 10_000);
 
-        for (String nameElement : namesArr) {
-            System.out.print(nameElement + " ");
+        Path path = Path.of("d:/projectPM/data");
+
+        List<String> productsCSVlist = productMocker.getProductDataAsCSVlist();
+        for (int i = 0; i < productsCSVlist.size(); i++) {
+            try {
+                Files.write(path.resolve("product" + (1 + i) + ".txt"), productsCSVlist.get(i).getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                System.out.println("Error creating file with file name: " + "product" + 101 + i + ".txt" + System.lineSeparator() + e.getMessage());
+            }
         }
-        System.out.println();
-        int sum = Arrays.stream(namesArr).mapToInt((s) -> s.length())
-                .filter((i) -> i <= 2)
-                .sum();
-        System.out.println("Sum is " + sum);
-        int numberOfElementsWithLengthSmalledThenTwo = (int) Arrays.stream(namesArr).mapToInt((s) -> s.length())
-                .filter((i) -> i <= 2)
-                .count();
-        System.out.println("There are total of " + numberOfElementsWithLengthSmalledThenTwo + " element with length smaller or equal to two");
 
-        //To Upper Case:
-        namesArr = Arrays.stream(namesArr)
-                .map((s) -> (s.toUpperCase()))
-                .sorted(String::compareTo)
-                .toArray(String[]::new);
+        List<String> reviewsAsCSV = productMocker.getReviewDataAsCSVlist(30_000);
+        for (int i = 0; i < reviewsAsCSV.size(); i++) {
+            int reviewForProductID = productMocker.getRandomInteger(1, 150);
+            try {
+                Path fileName = path.resolve("reviews" + reviewForProductID + ".txt");
+                if (Files.exists(fileName)) {
+                    Files.writeString(fileName, reviewsAsCSV.get(i).concat(System.lineSeparator()), StandardOpenOption.APPEND);
+                } else {
+                    Files.writeString(fileName, reviewsAsCSV.get(i).concat(System.lineSeparator()), StandardOpenOption.CREATE);
+                }
+            } catch (IOException e) {
+                System.out.println("Can't create or update file with name: " + "review" + reviewForProductID + ".txt"
+                        + System.lineSeparator() + e.getMessage());
+            }
+        }
 
-        System.out.println(String.join(", ", namesArr));
 
     }
 }

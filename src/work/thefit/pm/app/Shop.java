@@ -2,11 +2,6 @@ package work.thefit.pm.app;
 
 import work.thefit.pm.data.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.function.Predicate;
-
 /**
  * {@code Shop} class is used to represent the Product Management System app.
  *
@@ -16,13 +11,31 @@ import java.util.function.Predicate;
 public class Shop {
     public static void main(String[] args) {
 
-        ProductManager pm = new ProductManager("bg-BG");
+      /*  pm.parseProduct("D,101,Tea,1.99,0,2024-01-26");
+        pm.parseReview("101,4,Nice hot cup of tea");
+        pm.parseReview("101,2,Rather week twe");
+        pm.parseReview("101,4,Good tea");
+        pm.parseReview("101,5,Perfect tea");
+        pm.parseReview("101,3,Just add some lemon");
+        pm.printProductReport(101);
+        pm.parseProduct("F,103,Cake,3.99,0,2024-04-26");*/
 
-        pm.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
+        ProductManager pm = new ProductManager("en-GB");
+
+        pm.dumpData();
+        pm.restoreData();
+
+        pm.printProductReport(101);
+        pm.printProductReport(102);
+        pm.printProductReport(103);
+        pm.printProductReport(104);
+        pm.printProductReport(226);
+
+/*        pm.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
         pm.printProductReport(101);
        // pm.parseReview("xx,1,Nice hot cup of tea");
-        pm.parseProduct("Xzz,103,Cake,4,Sweet as grandma's cake,2028-12-39");
-        pm.printProductReport(103);
+        pm.parseProduct("F,103,Cake,4,0,2028-12-28");
+        pm.printProductReport(103);*/
 
 
 /*        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");

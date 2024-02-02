@@ -1,11 +1,17 @@
 package work.thefit.pm.data;
 
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -32,10 +38,16 @@ public class ProductManager {
             "ja_JP", new ResourceFormatter(new Locale("ja", "JP"))
     );
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-    private final Map<Product, List<Review>> products = new HashMap<>();
+    private Map<Product, List<Review>> products = new HashMap<>();
     private final ResourceBundle configParser = ResourceBundle.getBundle("work.thefit.pm.data.configParser");
     private MessageFormat productFormatForCSV = new MessageFormat(configParser.getString("product.data.format"));
     private MessageFormat reviewFormatForCSV = new MessageFormat(configParser.getString("review.data.format"));
+
+    private static final String userHomeDirectory = ""; //System.getProperty("user.home");
+    private final Path reportsFolder = Path.of(userHomeDirectory, configParser.getString("reports.folder"));
+    private final Path dataFolder = Path.of(userHomeDirectory, configParser.getString("data.folder"));
+    private final Path tempFolder = Path.of(userHomeDirectory, configParser.getString("temp.folder"));
+
 
     /**
      * Method {@link #changeLocale(String languageTag)} is used to change the current locale of the ProductManager class.
@@ -61,6 +73,7 @@ public class ProductManager {
 
     public ProductManager(String languageTag) {
         changeLocale(languageTag);
+        //  loadAllData();
     }
 
     public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
@@ -156,29 +169,58 @@ public class ProductManager {
                 '}';
     }
 
-    public void printProductReport(Product product) {
+    public void printProductReport(Product product) throws ProductManagerException {
 
         //TODO figure out what shall we do in case null is returned by the products.get(product) call
         List<Review> listOfReviews = products.get(product);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(formatter.formatProduct(product));
-        sb.append(System.lineSeparator());
-
-        Collections.sort(listOfReviews);
-
-        if (listOfReviews.isEmpty()) {
-            sb.append(formatter.getText("no.reviews"))
-                    .append(System.lineSeparator());
-        } else {
-            sb.append(listOfReviews.stream()
-                    .parallel()
-                    .map(currReview -> formatter.formatReview(currReview) + System.lineSeparator())
-                    .collect(Collectors.joining())
-            );
-
+        Path productFile = reportsFolder.resolve(MessageFormat.format(configParser.getString("report.file"),
+                product.getId()));
+        try {
+            Files.createDirectories(reportsFolder);
+        } catch (IOException e) {
+            throw new ProductManagerException("грешка при създаването на директориите: " + "\"" + reportsFolder + "\"." +
+                    System.lineSeparator() + e.getMessage());
         }
-        System.out.println(sb);
+        try (PrintWriter writeTextToFile =
+                     new PrintWriter(
+                             new OutputStreamWriter(
+                                     Files.newOutputStream(
+                                             productFile, StandardOpenOption.CREATE), StandardCharsets.UTF_8
+                             ))) {
+
+            writeTextToFile.append(formatter.formatProduct(product))
+                    .append(System.lineSeparator());
+            Collections.sort(listOfReviews);
+
+            if (listOfReviews.isEmpty()) {
+                writeTextToFile.append(formatter.getText("no.reviews"))
+                        .append(System.lineSeparator());
+            } else {
+                writeTextToFile.append(listOfReviews.stream()
+                        .parallel()
+                        .map(currReview -> formatter.formatReview(currReview) + System.lineSeparator())
+                        .collect(Collectors.joining())
+                );
+            }
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            logger.log(Level.SEVERE, "Illegal argument exception, double check the options passed to the PrintWriter object" + e.getMessage());
+        } catch (SecurityException e) {
+            logger.log(Level.SEVERE, "Security issues with local File System. Please check WRITE permission for this volume at " + productFile.toString() + "  and this user/groups.\nOriginal Error Msg:\n" + e.getMessage());
+        } catch (IOException e) {
+            var customException = new ProductManagerException("Saving product to file was unsuccessful due to I/O error." + e.getMessage(), e);
+            logger.log(Level.INFO, customException.getMessage());
+            throw customException;
+        }
+
+/*
+            IllegalArgumentException – if options contains an invalid combination of options
+            UnsupportedOperationException – if an unsupported option is specified
+            FileAlreadyExistsException – If a file of that name already exists and the CREATE_NEW option is specified (optional specific exception)
+            IOException – if an I/O error occurs
+            SecurityException – In the case of the default provider, and a security manager is installed, the checkWrite method is invoked to check write access to the file. The checkDelete method is invoked to check delete access if the file is opened with*/
+
+        //   System.out.println(sb);
 
     }
 
@@ -199,28 +241,28 @@ public class ProductManager {
     /**
      * @param csvText made of comma separated values in the following format.
      */
-    public void parseReview(String csvText) {
+    private Review parseReview(String csvText) {
         //TODO move to json, or trim the values[] as parse() method doesn't do any trimming and as a result passing " 3" will trow NumberFormatException.
+        Review parsedReview = null;
         try {
-
             Object[] values = reviewFormatForCSV.parse(csvText);
-            reviewProduct(Integer.parseInt((String) values[0]),
-                    Ratable.convert(Integer.parseInt((String) values[1])),
-                    (String) values[2]);
+            parsedReview = new Review(Ratable.convert(Integer.parseInt((String) values[0])),
+                    (String) values[1]);
         } catch (ParseException | NumberFormatException e) {
             logger.log(Level.WARNING, "Error parsing review " + csvText, e.getMessage());
         }
+        return parsedReview;
     }
 
-    public void parseProduct(String csvText) {
-
+    private Product parseProduct(String csvText) {
+        Product parsedProduct = null;
         try {
             Object[] values = productFormatForCSV.parse(csvText);
-            //expected format is: "F, 103, Cake, 3.99, 0, 2024-03-03"
+            //expected format is: "F,103,Cake,3.99,0,2024-03-03"
             char productType = ((String) values[0]).charAt(0);
             switch (productType) {
                 case 'F':
-                    createProduct(
+                    parsedProduct = new Food(
                             Integer.parseInt((String) values[1]),
                             (String) values[2],
                             BigDecimal.valueOf(Double.parseDouble((String) values[3])),
@@ -228,14 +270,14 @@ public class ProductManager {
                             LocalDate.parse((String) values[5]));
                     break;
                 case 'D':
-                    createProduct(
+                    parsedProduct = new Drink(
                             Integer.parseInt((String) values[1]),
                             (String) values[2],
                             BigDecimal.valueOf(Double.parseDouble((String) values[3])),
                             Ratable.convert(Integer.parseInt((String) values[4])));
                     break;
                 default:
-                    //Squared an unsupported Product type.
+                    //supplied an unsupported Product type.
                     throw new IllegalArgumentException("Wrong product type was supplied (" + productType + ") during object creation. " +
                             "Please, try with some of the supported product types.");
             }
@@ -244,10 +286,12 @@ public class ProductManager {
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "No product was created. Error parsing product. Reason: " + e.getMessage(), e.getStackTrace());
         }
+        return parsedProduct;
     }
 
     public Map<String, String> getDiscounts() {
-        /*Map<String, String> avgDiscountBasedOnRating = new HashMap<>(Rating.values().length);
+        /*
+        Map<String, String> avgDiscountBasedOnRating = new HashMap<>(Rating.values().length);
 
         for (Rating currentRating : List.of(Rating.values())) {
             String currentRatingAsString = currentRating.getStars();
@@ -263,7 +307,8 @@ public class ProductManager {
                             .orElse(0.d)
             ));
         }
-        return avgDiscountBasedOnRating;*/
+        return avgDiscountBasedOnRating;
+        */
 
         return products.keySet()
                 .stream()
@@ -276,6 +321,127 @@ public class ProductManager {
                                 )
                         )
                 );
+    }
+
+    private List<Review> loadReviews(Product product) {
+        List<Review> loadedReviews = null;
+        Path fileWithReviews = dataFolder.resolve(MessageFormat.format(configParser.getString("reviews.data.file"), product.getId()));
+        if (Files.exists(fileWithReviews)) {
+            try {
+                loadedReviews = Files.lines(fileWithReviews, StandardCharsets.UTF_8)
+                        .map(text -> parseReview(text))
+                        .filter(review -> review != null)
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error loading reviews "
+                        + e.getMessage());
+            }
+        } else {
+            loadedReviews = new ArrayList<>();
+        }
+        return loadedReviews;
+    }
+
+    private Product loadProduct(Path pathToProductsSavedAsCSV) {
+        Product product = null;
+        try {
+            product = parseProduct(Files.lines(dataFolder.resolve(pathToProductsSavedAsCSV), StandardCharsets.UTF_8)
+                    .findFirst().orElseThrow());
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error reading file with product data " + pathToProductsSavedAsCSV
+                    + System.lineSeparator()
+                    + e.getMessage());
+        } catch (NoSuchElementException e) {
+            logger.log(Level.WARNING, "The supplied file \""
+                    + pathToProductsSavedAsCSV + "\" is empty. The product was not added to the platform. Please, provide a valid file."
+                    + System.lineSeparator()
+                    + e.getMessage());
+        }
+        return product;
+    }
+
+    private void loadAllData() {
+        try {
+            products = Files.list(dataFolder)
+                    .filter(file -> file.getFileName().toString().startsWith("product"))
+                    .map(file -> loadProduct(file))
+                    .filter(product -> product != null)
+                    .collect(Collectors.toMap(
+                            (product) -> product, product -> loadReviews(product)));
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error loading data from files."
+                    + System.lineSeparator()
+                    + e.getMessage());
+        }
+        recalculateAverageProductRatingBasedOnAllReviews();
+    }
+
+
+    //TODO add this method as lambda to the addAllData() prior to putting values in the map
+    private void recalculateAverageProductRatingBasedOnAllReviews() {
+
+        Map<Product, Integer> productsMapUpdated = new HashMap<>();
+
+        var iterator = products.entrySet().iterator();
+        while (iterator.hasNext()) {
+
+            var currentEntry = iterator.next();
+            List<Review> currentReviewsList = currentEntry.getValue();
+            Product currentProduct = currentEntry.getKey();
+            int avgRatingAsInteger = (int) Math.round(currentReviewsList.stream()
+                    .mapToInt(reviews -> reviews.getRating().ordinal())
+                    .average().orElse(0));
+            if (currentProduct.getRating().ordinal() != avgRatingAsInteger) {
+                Product updatedProductWithAccurateAvgRating = currentProduct.applyRating(avgRatingAsInteger);
+                productsMapUpdated.put(updatedProductWithAccurateAvgRating, avgRatingAsInteger);
+            }
+
+        }
+        for (Map.Entry<Product, Integer> productWithAccurateAverageRating : productsMapUpdated.entrySet()) {
+            List<Review> listOfSubmittedReviewsForProduct = products.remove(productWithAccurateAverageRating.getKey());
+            products.put(productWithAccurateAverageRating.getKey(), listOfSubmittedReviewsForProduct);
+        }
+
+    }
+
+    public void dumpData() {
+        //TODO: 1) convert the object into ByteArray[] for instance using the ByteArrayOutputStream
+        //TODO: 2) Append some TAG ID that will show  type of the object and the generics it was using.
+        //TODO: 2.1) Maybe adding some header with that tag.
+        //TODO: 3) Wrap the byteArray into some temperChecker like hashingMethod or something like this that will be
+        //TODO  appended at the ByteArray's end.
+        //TODO: 4) Encrypt that byteArray via AES using messageDigest();
+        //TODO: 5) Then passing this ByteArray to this dumpData method. Key shall be generated and stored by the admin calling dumpData();
+
+        try {
+            if (Files.notExists(tempFolder)) {
+                Files.createDirectories(tempFolder);
+            }
+            Path tempFile = tempFolder.resolve(MessageFormat.format(configParser.getString("temp.file"), Instant.now().toString().replaceAll(":", "")));
+            try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(tempFile, StandardOpenOption.CREATE))) {
+                out.writeObject(products);
+                products = new HashMap<>();
+            }
+
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error dumping data." + e.getMessage());
+        }
+    }
+
+
+    @SuppressWarnings("unchecked")
+    public void restoreData() {
+        try {
+            Path tempFile = Files.list(tempFolder)
+                    .filter(files -> files.getFileName().toString().endsWith(".tmp"))
+                    .findFirst().orElseThrow();
+            try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(tempFile, StandardOpenOption.DELETE_ON_CLOSE))) {
+                products = (HashMap) in.readObject();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            logger.log(Level.SEVERE, "System can not load data from file. Make sure the file is present and has .tmp extension. Make sure the file is not corrupted and that it was created with the same version" +
+                    "if the System.");
+        }
     }
 
     private static class ResourceFormatter {

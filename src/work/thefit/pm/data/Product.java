@@ -1,5 +1,6 @@
 package work.thefit.pm.data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -16,7 +17,7 @@ import static java.math.RoundingMode.HALF_UP;
  * @author YKisyov
  * @version 0.7.1
  */
-public abstract class Product implements Ratable<Product> {
+public abstract class Product implements Ratable<Product>, Serializable {
     private final static BigDecimal DISCOUNT_RARE = BigDecimal.valueOf(0.1);
     private final int id;
     private final String name;
