@@ -20,13 +20,12 @@ public class Shop {
         pm.printProductReport(101);
         pm.parseProduct("F,103,Cake,3.99,0,2024-04-26");*/
 
-        ProductManager pm = new ProductManager("en-GB");
-
-        pm.printProductReport(101);
-        pm.printProductReport(102);
-        pm.printProductReport(103);
-        pm.printProductReport(104);
-        pm.printProductReport(226);
+        ProductManager pm = ProductManager.getInstance();
+        pm.printProductReport(101, "Ala-bla");
+        pm.printProductReport(102, "Kuku-ruki");
+        pm.printProductReport(103, "bg_BG");
+        pm.printProductReport(104, "ja_JP");
+        pm.printProductReport(226, "");
 
 /*        pm.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
         pm.printProductReport(101);

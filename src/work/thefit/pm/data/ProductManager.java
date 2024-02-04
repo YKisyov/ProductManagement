@@ -30,13 +30,14 @@ import java.util.stream.Collectors;
 
 public class ProductManager {
 
-    private ResourceFormatter formatter;
+    //private ResourceFormatter formatter;
     private static final Map<String, ResourceFormatter> formatters = Map.of(
             "en_GB", new ResourceFormatter(new Locale("en", "GB")),
             "en_US", new ResourceFormatter(new Locale("en", "US")),
             "bg_BG", new ResourceFormatter(new Locale("bg", "BG")),
             "ja_JP", new ResourceFormatter(new Locale("ja", "JP"))
     );
+    private static final String DEFAULT_LANGUAGE_TAG = "en_GB";
     private final Logger logger = Logger.getLogger(this.getClass().getName());
     private Map<Product, List<Review>> products = new HashMap<>();
     private final ResourceBundle configParser = ResourceBundle.getBundle("work.thefit.pm.data.configParser");
@@ -47,7 +48,7 @@ public class ProductManager {
     private final Path reportsFolder = Path.of(userHomeDirectory, configParser.getString("reports.folder"));
     private final Path dataFolder = Path.of(userHomeDirectory, configParser.getString("data.folder"));
     private final Path tempFolder = Path.of(userHomeDirectory, configParser.getString("temp.folder"));
-
+    private static final ProductManager pmSingletonInstance = new ProductManager();
 
     /**
      * Method {@link #changeLocale(String languageTag)} is used to change the current locale of the ProductManager class.
@@ -57,9 +58,9 @@ public class ProductManager {
      *                     country. For example "en-GB" will return English local and formatting specific for Great Britain.
      *                     {@since} version 0.10.0;
      */
-    public void changeLocale(String languageTag) {
+    /*public void changeLocale(String languageTag) {
         this.formatter = formatters.getOrDefault(languageTag, formatters.get("en_GB"));
-    }
+    }*/
 
     /**
      * This method is used to ask the {@link ProductManager} what are the supported locales.
@@ -71,9 +72,14 @@ public class ProductManager {
         return formatters.keySet();
     }
 
-    public ProductManager(String languageTag) {
-        changeLocale(languageTag);
-        //  loadAllData();
+    private ProductManager() {
+        // changeLocale(languageTag);
+        loadAllData();
+        // restoreData();
+    }
+
+    public static ProductManager getInstance() {
+        return pmSingletonInstance;
     }
 
     public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
@@ -154,23 +160,25 @@ public class ProductManager {
                 .orElseThrow(() -> new ProductManagerException("Product with ID " + id + " was not found."));
     }
 
-    public void printProductReport(int productId) {
+    public void printProductReport(int productId, String languageTag) {
+        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
         try {
-            printProductReport(findProduct(productId));
+            printProductReport(findProduct(productId), languageTag);
         } catch (ProductManagerException e) {
             logger.log(Level.INFO, e.getMessage());
         }
     }
 
-    @Override
+ /*   @Override
     public String toString() {
         return "ProductManager{" +
                 "formatter=" + formatter +
                 '}';
-    }
+    }*/
 
-    public void printProductReport(Product product) throws ProductManagerException {
+    public void printProductReport(Product product, String languageTag) throws ProductManagerException {
 
+        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
         //TODO figure out what shall we do in case null is returned by the products.get(product) call
         List<Review> listOfReviews = products.get(product);
 
@@ -224,14 +232,16 @@ public class ProductManager {
 
     }
 
-    public void printProduct(Predicate<Product> filter, Comparator<Product> sorter) {
+    public void printProduct(Predicate<Product> filter, Comparator<Product> sorter, String languageTag) {
+
+        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
 
         StringBuilder sb = new StringBuilder();
         sb.append(products.keySet().stream()
                 .parallel()
                 .sorted(sorter)
                 .filter(filter)
-                .map(product -> product.toString() + System.lineSeparator())
+                .map(product -> formatter.formatProduct(product) + System.lineSeparator())
                 .collect(Collectors.joining())
         );
         System.out.println(sb.toString());
@@ -289,26 +299,9 @@ public class ProductManager {
         return parsedProduct;
     }
 
-    public Map<String, String> getDiscounts() {
-        /*
-        Map<String, String> avgDiscountBasedOnRating = new HashMap<>(Rating.values().length);
+    public Map<String, String> getDiscounts(String languageTag) {
 
-        for (Rating currentRating : List.of(Rating.values())) {
-            String currentRatingAsString = currentRating.getStars();
-            int currentRatingAsInt = currentRating.ordinal();
-
-            avgDiscountBasedOnRating.put(currentRatingAsString, formatter.backEndDecimalFormatForInternalUsage.format(
-                    products.keySet()
-                            .stream()
-                            .parallel()
-                            .filter(p -> p.getRating().ordinal() == currentRatingAsInt)
-                            .mapToDouble(p -> p.getDiscount().doubleValue())
-                            .average()
-                            .orElse(0.d)
-            ));
-        }
-        return avgDiscountBasedOnRating;
-        */
+        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
 
         return products.keySet()
                 .stream()
@@ -427,7 +420,6 @@ public class ProductManager {
             logger.log(Level.SEVERE, "Error dumping data." + e.getMessage());
         }
     }
-
 
     @SuppressWarnings("unchecked")
     private void restoreData() {
