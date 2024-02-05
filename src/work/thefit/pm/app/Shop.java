@@ -2,6 +2,8 @@ package work.thefit.pm.app;
 
 import work.thefit.pm.data.*;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * {@code Shop} class is used to represent the Product Management System app.
  *
@@ -10,6 +12,13 @@ import work.thefit.pm.data.*;
  */
 public class Shop {
     public static void main(String[] args) {
+
+        //Test
+        String languageTag = ProductManager.getSupportedLocales()
+                .stream()
+                .skip(ThreadLocalRandom.current().nextInt(0, ProductManager.getSupportedLocales().size()))
+                .findFirst()
+                .get();
 
       /*  pm.parseProduct("D,101,Tea,1.99,0,2024-01-26");
         pm.parseReview("101,4,Nice hot cup of tea");

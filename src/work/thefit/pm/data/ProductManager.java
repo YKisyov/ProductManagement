@@ -17,6 +17,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,6 +39,9 @@ public class ProductManager {
             "bg_BG", new ResourceFormatter(new Locale("bg", "BG")),
             "ja_JP", new ResourceFormatter(new Locale("ja", "JP"))
     );
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private Lock readLock = rwLock.readLock();
+    private Lock writeLock = rwLock.writeLock();
     private static final String DEFAULT_LANGUAGE_TAG = "en_GB";
     private final Logger logger = Logger.getLogger(this.getClass().getName());
     private Map<Product, List<Review>> products = new HashMap<>();
@@ -83,23 +88,45 @@ public class ProductManager {
     }
 
     public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
-        Product product = new Food(id, name, price, rating, bestBefore);
-        products.putIfAbsent(product, new ArrayList<>());
+        Product product = null;
+
+        try {
+            writeLock.lock();
+            product = new Food(id, name, price, rating, bestBefore);
+            products.putIfAbsent(product, new ArrayList<>());
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Error adding product " + e.getMessage());
+            return null;
+        } finally {
+            writeLock.unlock();
+        }
         return product;
     }
 
     public Product createProduct(int id, String name, BigDecimal price, Rating rating) {
-        Product product = new Drink(id, name, price, rating);
-        products.putIfAbsent(product, new ArrayList<>());
+        Product product = null;
+        try {
+            writeLock.unlock();
+            product = new Drink(id, name, price, rating);
+            products.putIfAbsent(product, new ArrayList<>());
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Error adding product" + e.getMessage());
+            return null;
+        } finally {
+            writeLock.unlock();
+        }
         return product;
     }
 
     public Product reviewProduct(int productID, Rating rating, String comments) {
         try {
+            writeLock.lock();
             return reviewProduct(findProduct(productID), rating, comments);
         } catch (ProductManagerException e) {
             logger.log(Level.INFO, e.getMessage());
             return null;
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -117,7 +144,7 @@ public class ProductManager {
      * @return a new instance of the immutable Product with updated review properties or {@link null} if you try
      * to review unexciting Product that is yet unknown to the Product manager.
      */
-    public Product reviewProduct(Product product, Rating rating, String comments) {
+    private Product reviewProduct(Product product, Rating rating, String comments) {
 
         /*
          * As all keys in our design are immutable, we will have to update the key. This is needed due to the fact,
@@ -126,46 +153,59 @@ public class ProductManager {
          * new instance of the old state of the object.
          * This is why we 1st remove the old state of the KEY product and later on put it back in the Map.
          */
-        List<Review> listOfCurrentReviews = products.remove(product);
+        Product updatedProduct = null;
+        try {
+            writeLock.lock();
+            List<Review> listOfCurrentReviews = products.remove(product);
 
-        /** TODO Later on shall be re-implemented via "throws"
-         *
-         * */
-        if (listOfCurrentReviews == null) {
-            System.out.println("ERROR! Our system can not find the product you are trying to review.\n" +
-                    "As a result Your review was not stored.\n" +
-                    "Please, try again later.\n");
-            return null;
+            /** TODO Later on shall be re-implemented via "throws"
+             *
+             * */
+            if (listOfCurrentReviews == null) {
+                System.out.println("ERROR! Our system can not find the product you are trying to review.\n" +
+                        "As a result Your review was not stored.\n" +
+                        "Please, try again later.\n");
+                return null;
+            }
+
+            listOfCurrentReviews.add(new Review(rating, comments));
+            OptionalDouble averageRating = listOfCurrentReviews.stream()
+                    .mapToInt((currReview) -> currReview.getRating().ordinal())
+                    .average();
+
+            updatedProduct = averageRating.isEmpty() ? product.applyRating(rating)
+                    : product.applyRating(Ratable.convert((int) Math.round(averageRating.getAsDouble())));
+
+            products.put(updatedProduct, listOfCurrentReviews);
+        } finally {
+            writeLock.unlock();
         }
-
-        listOfCurrentReviews.add(new Review(rating, comments));
-        OptionalDouble averageRating = listOfCurrentReviews.stream()
-                .mapToInt((currReview) -> currReview.getRating().ordinal())
-                .average();
-
-        Product updatedProduct = averageRating.isEmpty() ? product.applyRating(rating)
-                : product.applyRating(Ratable.convert((int) Math.round(averageRating.getAsDouble())));
-
-        products.put(updatedProduct, listOfCurrentReviews);
         return updatedProduct;
-
     }
+
 
     public Product findProduct(int id) throws ProductManagerException {
-
-        return products.keySet().stream()
-                .parallel()
-                .filter(product -> product.getId() == id)
-                .findAny()  //I chose this method due to the parallel call of Stream API in this method.
-                .orElseThrow(() -> new ProductManagerException("Product with ID " + id + " was not found."));
+        try {
+            readLock.lock();
+            return products.keySet().stream()
+                    .parallel()
+                    .filter(product -> product.getId() == id)
+                    .findAny()  //I chose this method due to the parallel call of Stream API in this method.
+                    .orElseThrow(() -> new ProductManagerException("Product with ID " + id + " was not found."));
+        } finally {
+            readLock.unlock();
+        }
     }
 
-    public void printProductReport(int productId, String languageTag) {
+    public void printProductReport(int productId, String languageTag, String client) {
         ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
         try {
-            printProductReport(findProduct(productId), languageTag);
+            readLock.lock();
+            printProductReport(findProduct(productId), languageTag, client);
         } catch (ProductManagerException e) {
             logger.log(Level.INFO, e.getMessage());
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -176,51 +216,53 @@ public class ProductManager {
                 '}';
     }*/
 
-    public void printProductReport(Product product, String languageTag) throws ProductManagerException {
+    private void printProductReport(Product product, String languageTag, String client) throws ProductManagerException {
 
         ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
         //TODO figure out what shall we do in case null is returned by the products.get(product) call
-        List<Review> listOfReviews = products.get(product);
 
-        Path productFile = reportsFolder.resolve(MessageFormat.format(configParser.getString("report.file"),
-                product.getId()));
         try {
-            Files.createDirectories(reportsFolder);
-        } catch (IOException e) {
-            throw new ProductManagerException("грешка при създаването на директориите: " + "\"" + reportsFolder + "\"." +
-                    System.lineSeparator() + e.getMessage());
-        }
-        try (PrintWriter writeTextToFile =
-                     new PrintWriter(
-                             new OutputStreamWriter(
-                                     Files.newOutputStream(
-                                             productFile, StandardOpenOption.CREATE), StandardCharsets.UTF_8
-                             ))) {
+            writeLock.lock();
+            List<Review> listOfReviews = products.get(product);
 
-            writeTextToFile.append(formatter.formatProduct(product))
-                    .append(System.lineSeparator());
-            Collections.sort(listOfReviews);
-
-            if (listOfReviews.isEmpty()) {
-                writeTextToFile.append(formatter.getText("no.reviews"))
-                        .append(System.lineSeparator());
-            } else {
-                writeTextToFile.append(listOfReviews.stream()
-                        .parallel()
-                        .map(currReview -> formatter.formatReview(currReview) + System.lineSeparator())
-                        .collect(Collectors.joining())
-                );
+            Path productFile = reportsFolder.resolve(MessageFormat.format(configParser.getString("report.file"),
+                    product.getId(), client));
+            try {
+                Files.createDirectories(reportsFolder);
+            } catch (IOException e) {
+                throw new ProductManagerException("Error while creating directory: " + "\"" + reportsFolder + "\"." +
+                        System.lineSeparator() + e.getMessage());
             }
-        } catch (IllegalArgumentException | UnsupportedOperationException e) {
-            logger.log(Level.SEVERE, "Illegal argument exception, double check the options passed to the PrintWriter object" + e.getMessage());
-        } catch (SecurityException e) {
-            logger.log(Level.SEVERE, "Security issues with local File System. Please check WRITE permission for this volume at " + productFile.toString() + "  and this user/groups.\nOriginal Error Msg:\n" + e.getMessage());
-        } catch (IOException e) {
-            var customException = new ProductManagerException("Saving product to file was unsuccessful due to I/O error." + e.getMessage(), e);
-            logger.log(Level.INFO, customException.getMessage());
-            throw customException;
-        }
+            try (PrintWriter writeTextToFile =
+                         new PrintWriter(
+                                 new OutputStreamWriter(
+                                         Files.newOutputStream(
+                                                 productFile, StandardOpenOption.CREATE), StandardCharsets.UTF_8
+                                 ))) {
 
+                writeTextToFile.append(formatter.formatProduct(product))
+                        .append(System.lineSeparator());
+                Collections.sort(listOfReviews);
+
+                if (listOfReviews.isEmpty()) {
+                    writeTextToFile.append(formatter.getText("no.reviews"))
+                            .append(System.lineSeparator());
+                } else {
+                    writeTextToFile.append(listOfReviews.stream()
+                            .parallel()
+                            .map(currReview -> formatter.formatReview(currReview) + System.lineSeparator())
+                            .collect(Collectors.joining())
+                    );
+                }
+            } catch (IllegalArgumentException | UnsupportedOperationException e) {
+                logger.log(Level.SEVERE, "Illegal argument exception, double check the options passed to the PrintWriter object" + e.getMessage());
+            } catch (SecurityException e) {
+                logger.log(Level.SEVERE, "Security issues with local File System. Please check WRITE permission for this volume at " + productFile.toString() + "  and this user/groups.\nOriginal Error Msg:\n" + e.getMessage());
+            } catch (IOException e) {
+                var customException = new ProductManagerException("Saving product to file was unsuccessful due to I/O error." + e.getMessage(), e);
+                logger.log(Level.INFO, customException.getMessage());
+                throw customException;
+            }
 /*
             IllegalArgumentException – if options contains an invalid combination of options
             UnsupportedOperationException – if an unsupported option is specified
@@ -228,22 +270,29 @@ public class ProductManager {
             IOException – if an I/O error occurs
             SecurityException – In the case of the default provider, and a security manager is installed, the checkWrite method is invoked to check write access to the file. The checkDelete method is invoked to check delete access if the file is opened with*/
 
-        //   System.out.println(sb);
+            //   System.out.println(sb);
+        } finally {
+            writeLock.unlock();
+        }
 
     }
 
     public void printProduct(Predicate<Product> filter, Comparator<Product> sorter, String languageTag) {
 
-        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
-
         StringBuilder sb = new StringBuilder();
-        sb.append(products.keySet().stream()
-                .parallel()
-                .sorted(sorter)
-                .filter(filter)
-                .map(product -> formatter.formatProduct(product) + System.lineSeparator())
-                .collect(Collectors.joining())
-        );
+        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
+        try {
+            readLock.lock();
+            sb.append(products.keySet().stream()
+                    .parallel()
+                    .sorted(sorter)
+                    .filter(filter)
+                    .map(product -> formatter.formatProduct(product) + System.lineSeparator())
+                    .collect(Collectors.joining())
+            );
+        } finally {
+            readLock.unlock();
+        }
         System.out.println(sb.toString());
 
     }
@@ -301,19 +350,25 @@ public class ProductManager {
 
     public Map<String, String> getDiscounts(String languageTag) {
 
-        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
+        try {
+            readLock.lock();
+            ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
+            return products.keySet()
+                    .stream()
+                    .collect(
+                            Collectors.groupingBy(
+                                    product -> product.getRating().getStars(), //Here we get the groupingBy element, then we list the rest of the elements per group.
+                                    Collectors.collectingAndThen( //here we tell JRE how to "create" the elements for each group.
+                                            Collectors.summingDouble(product -> product.getDiscount().doubleValue()),
+                                            discount -> formatter.moneyFormat.format(discount)  //Sort of the finished action.
+                                    )
+                            )
+                    );
 
-        return products.keySet()
-                .stream()
-                .collect(
-                        Collectors.groupingBy(
-                                product -> product.getRating().getStars(), //Here we get the groupingBy element, then we list the rest of the elements per group.
-                                Collectors.collectingAndThen( //here we tell JRE how to "create" the elements for each group.
-                                        Collectors.summingDouble(product -> product.getDiscount().doubleValue()),
-                                        discount -> formatter.moneyFormat.format(discount)  //Sort of the finished action.
-                                )
-                        )
-                );
+        } finally {
+            readLock.unlock();
+        }
+
     }
 
     private List<Review> loadReviews(Product product) {
@@ -413,7 +468,7 @@ public class ProductManager {
             Path tempFile = tempFolder.resolve(MessageFormat.format(configParser.getString("temp.file"), Instant.now().toString().replaceAll(":", "")));
             try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(tempFile, StandardOpenOption.CREATE))) {
                 out.writeObject(products);
-                products = new HashMap<>();
+                //    products = new HashMap<>();
             }
 
         } catch (IOException e) {
