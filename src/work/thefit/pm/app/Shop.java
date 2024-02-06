@@ -2,7 +2,13 @@ package work.thefit.pm.app;
 
 import work.thefit.pm.data.*;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * {@code Shop} class is used to represent the Product Management System app.
@@ -11,101 +17,72 @@ import java.util.concurrent.ThreadLocalRandom;
  * @version 0.7.1
  */
 public class Shop {
-    public static void main(String[] args) {
-
-        //Test
-        String languageTag = ProductManager.getSupportedLocales()
-                .stream()
-                .skip(ThreadLocalRandom.current().nextInt(0, ProductManager.getSupportedLocales().size()))
-                .findFirst()
-                .get();
-
-      /*  pm.parseProduct("D,101,Tea,1.99,0,2024-01-26");
-        pm.parseReview("101,4,Nice hot cup of tea");
-        pm.parseReview("101,2,Rather week twe");
-        pm.parseReview("101,4,Good tea");
-        pm.parseReview("101,5,Perfect tea");
-        pm.parseReview("101,3,Just add some lemon");
-        pm.printProductReport(101);
-        pm.parseProduct("F,103,Cake,3.99,0,2024-04-26");*/
-
+    public static <itn> void main(String[] args) {
+        AtomicInteger clientCount = new AtomicInteger(0);
         ProductManager pm = ProductManager.getInstance();
-        pm.printProductReport(101, "Ala-bla");
-        pm.printProductReport(102, "Kuku-ruki");
-        pm.printProductReport(103, "bg_BG");
-        pm.printProductReport(104, "ja_JP");
-        pm.printProductReport(226, "");
+        pm.printProductReport(169, "", "DanchoShop");
 
-/*        pm.createProduct(101, "Tea", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
-        pm.printProductReport(101);
-       // pm.parseReview("xx,1,Nice hot cup of tea");
-        pm.parseProduct("F,103,Cake,4,0,2028-12-28");
-        pm.printProductReport(103);*/
+        Callable<String> client = () -> {
+            String clientID = "Client " + clientCount.incrementAndGet();
+            String threadName = Thread.currentThread().getName();
+            int productID = ThreadLocalRandom.current().nextInt(101, 143);
+            String languageTag = ProductManager.getSupportedLocales()
+                    .stream()
+                    .skip(ThreadLocalRandom.current().nextInt(
+                            ProductManager.getSupportedLocales().size()))
+                    .findFirst().get(); // No way to throe NoSuchElementException
+            StringBuilder log = new StringBuilder();
+            System.out.println("Tread " + threadName + " is running now.");
+            log.append(clientID
+                    + " "
+                    + threadName
+                    + System.lineSeparator()
+                    + "\tstart of log\t"
+                    + System.lineSeparator());
 
+            log.append(pm.getDiscounts(languageTag)
+                    .entrySet()
+                    .stream()
+                    .map(entry -> entry.getKey() + "\t" + entry.getValue())
+                    .collect(Collectors.joining(System.lineSeparator()))
+            );
 
-/*        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
-        pm.reviewProduct(101, Rating.TWO_STAR, "Nice hot cup of tea");
-        pm.reviewProduct(101, Rating.FOUR_STAR, "Nice hot cup of tea");
-        pm.reviewProduct(101, Rating.TWO_STAR, "Rather weak tea");
-        pm.reviewProduct(101, Rating.FOUR_STAR, "Fine tea");
-        pm.reviewProduct(101, Rating.FOUR_STAR, "Good tea");
-        pm.reviewProduct(101, Rating.FIVE_STAR, "Perfect tea");
-        pm.reviewProduct(101, Rating.THREE_STAR, "Just add some lemon");*/
+            Product product = pm.reviewProduct(productID, Rating.FOUR_STAR, "Yet another review.");
+            log.append((product != null)
+                    ? System.lineSeparator() + "Product " + productID + "reviewed"
+                    : System.lineSeparator() + "Product " + productID + "not reviewed");
 
- /*       pm.createProduct(102, "Coffee", BigDecimal.valueOf(1.99), Rating.NOT_RATED);
-        pm.reviewProduct(102, Rating.THREE_STAR, "Coffee was OK");
-        pm.reviewProduct(102, Rating.ONE_STAR, "Where is the milk?!");
-        pm.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
-        pm.reviewProduct(102, Rating.FIVE_STAR, "It's perfect with 10 spoons of sugar");
+            pm.printProductReport(productID, languageTag, clientID);
+            log.append(clientID + " generated report for " + productID + " product");
 
-        pm.createProduct(103, "Cake", BigDecimal.valueOf(3.99), Rating.NOT_RATED, LocalDate.now().plusDays(2));
-        pm.reviewProduct(103, Rating.FIVE_STAR, "Very nice cake");
-        pm.reviewProduct(103, Rating.FOUR_STAR, "It is good, but I've expected more chocolate");
-        pm.reviewProduct(103, Rating.FIVE_STAR, "Tis cake is perfect");
+            log.append(System.lineSeparator()
+                    + "-\tend of log\t-"
+                    + System.lineSeparator()
+            );
 
-        pm.createProduct(104, "Cookie", BigDecimal.valueOf(2.5), Rating.NOT_RATED, LocalDate.now());
-        pm.reviewProduct(104, Rating.THREE_STAR, "Just another cookie");
-        pm.reviewProduct(104, Rating.THREE_STAR, "OK");
-        pm.reviewProduct(104, Rating.THREE_STAR, "OK");
+            return log.toString();
+        };
 
-        pm.createProduct(105, "Hot Chocolate", BigDecimal.valueOf(2.5), Rating.NOT_RATED);
-        pm.reviewProduct(105, Rating.FOUR_STAR, "Tasty!");
-        pm.reviewProduct(105, Rating.FOUR_STAR, "Not bad at all");
+        List<Callable<String>> clients = Stream.
+                generate(() -> client)
+                .limit(5)
+                .collect(Collectors.toList());
 
-        pm.createProduct(106, "Chocolate", BigDecimal.valueOf(2.5), Rating.NOT_RATED, LocalDate.now().plusDays(3));
-        pm.reviewProduct(106, Rating.TWO_STAR, "Two sweet");
-        pm.reviewProduct(106, Rating.THREE_STAR, "Better than cookie");
-        pm.reviewProduct(106, Rating.TWO_STAR, "Too bitter");
-        pm.reviewProduct(106, Rating.ONE_STAR, "I don't get it!");
-
-        pm.createProduct(107, "Cake", BigDecimal.valueOf(0.5), Rating.NOT_RATED, LocalDate.now().plusDays(3));
-        pm.reviewProduct(107, Rating.FIVE_STAR, "Very tasty for the price!");
-        pm.reviewProduct(107, Rating.FIVE_STAR, "Very good");
-        pm.reviewProduct(107, Rating.FIVE_STAR, "Too bad that I purchased the whole box");
-
-        String[] localeArr = {"en-GB", "bg-BG", "ja-JP"};
-        for (int i = 0; i < localeArr.length; i++) {
-            pm.changeLocale(localeArr[i]);
-            System.out.println("-=:: Locale is now Japanese ::=-");
-            for (int j = 1; j <= 6; j++) {
-                pm.printProductReport(100 + j);
-            }
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        try {
+            List<Future<String>> results = executorService.invokeAll(clients);
+            executorService.shutdown(); //Not thies will not halt the executor. It will only stop accepting new task.
+            results.stream().forEach( result -> {
+                try {
+                    System.out.println(result.get());
+                } catch (InterruptedException | ExecutionException e){
+                    Logger.getLogger(Shop.class.getName()).log(Level.SEVERE, null, e);
+                }
+            });
+        } catch (InterruptedException e) {
+            Logger.getLogger(Shop.class.getName()).log(Level.SEVERE, "Error invoking clients.");
         }
 
-        //Some lambda comparators
-        Comparator<Product> sortById = (p1, p2) -> p1.getId() - p2.getId();
-        Comparator<Product> sortByName = (p1, p2) -> p1.getName().compareTo(p2.getName());
-        Comparator<Product> sortByPrice = (p1, p2) -> (p1.getPrice().subtract(p2.getPrice())).intValue();
-        Comparator<Product> sortByRating = (p1, p2) -> p1.getPrice().compareTo(p2.getPrice());
-        Comparator<Product> sortByBestBefore = (p1, p2) -> p1.getBestBefore().compareTo(p2.getBestBefore());
-
-        Predicate<Product> filterDrinksAndFood = product -> product instanceof Drink || product instanceof Food;
-
-        pm.changeLocale("en-UK");
-        pm.printProduct(filterDrinksAndFood, sortByName.thenComparing(sortByPrice.reversed()));
-        pm.getDiscounts().forEach((ratingKey, avgDiscount) -> System.out.println(ratingKey + " \t" + avgDiscount));
-        pm.printProductReport(101);
-*/
     }
 
 }

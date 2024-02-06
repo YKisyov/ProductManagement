@@ -198,8 +198,8 @@ public class ProductManager {
     }
 
     public void printProductReport(int productId, String languageTag, String client) {
-        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
         try {
+            ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
             readLock.lock();
             printProductReport(findProduct(productId), languageTag, client);
         } catch (ProductManagerException e) {
@@ -218,51 +218,49 @@ public class ProductManager {
 
     private void printProductReport(Product product, String languageTag, String client) throws ProductManagerException {
 
-        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
         //TODO figure out what shall we do in case null is returned by the products.get(product) call
 
+        ResourceFormatter formatter = formatters.getOrDefault(languageTag, formatters.get(DEFAULT_LANGUAGE_TAG));
+        List<Review> listOfReviews = products.get(product);
+
+        Path productFile = reportsFolder.resolve(MessageFormat.format(configParser.getString("report.file"),
+                product.getId(), client));
         try {
-            writeLock.lock();
-            List<Review> listOfReviews = products.get(product);
+            Files.createDirectories(reportsFolder);
+        } catch (IOException e) {
+            throw new ProductManagerException("Error while creating directory: " + "\"" + reportsFolder + "\"." +
+                    System.lineSeparator() + e.getMessage());
+        }
+        try (PrintWriter writeTextToFile =
+                     new PrintWriter(
+                             new OutputStreamWriter(
+                                     Files.newOutputStream(
+                                             productFile, StandardOpenOption.CREATE), StandardCharsets.UTF_8
+                             ))) {
 
-            Path productFile = reportsFolder.resolve(MessageFormat.format(configParser.getString("report.file"),
-                    product.getId(), client));
-            try {
-                Files.createDirectories(reportsFolder);
-            } catch (IOException e) {
-                throw new ProductManagerException("Error while creating directory: " + "\"" + reportsFolder + "\"." +
-                        System.lineSeparator() + e.getMessage());
-            }
-            try (PrintWriter writeTextToFile =
-                         new PrintWriter(
-                                 new OutputStreamWriter(
-                                         Files.newOutputStream(
-                                                 productFile, StandardOpenOption.CREATE), StandardCharsets.UTF_8
-                                 ))) {
+            writeTextToFile.append(formatter.formatProduct(product))
+                    .append(System.lineSeparator());
+            Collections.sort(listOfReviews);
 
-                writeTextToFile.append(formatter.formatProduct(product))
+            if (listOfReviews.isEmpty()) {
+                writeTextToFile.append(formatter.getText("no.reviews"))
                         .append(System.lineSeparator());
-                Collections.sort(listOfReviews);
-
-                if (listOfReviews.isEmpty()) {
-                    writeTextToFile.append(formatter.getText("no.reviews"))
-                            .append(System.lineSeparator());
-                } else {
-                    writeTextToFile.append(listOfReviews.stream()
-                            .parallel()
-                            .map(currReview -> formatter.formatReview(currReview) + System.lineSeparator())
-                            .collect(Collectors.joining())
-                    );
-                }
-            } catch (IllegalArgumentException | UnsupportedOperationException e) {
-                logger.log(Level.SEVERE, "Illegal argument exception, double check the options passed to the PrintWriter object" + e.getMessage());
-            } catch (SecurityException e) {
-                logger.log(Level.SEVERE, "Security issues with local File System. Please check WRITE permission for this volume at " + productFile.toString() + "  and this user/groups.\nOriginal Error Msg:\n" + e.getMessage());
-            } catch (IOException e) {
-                var customException = new ProductManagerException("Saving product to file was unsuccessful due to I/O error." + e.getMessage(), e);
-                logger.log(Level.INFO, customException.getMessage());
-                throw customException;
+            } else {
+                writeTextToFile.append(listOfReviews.stream()
+                        .parallel()
+                        .map(currReview -> formatter.formatReview(currReview) + System.lineSeparator())
+                        .collect(Collectors.joining())
+                );
             }
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            logger.log(Level.SEVERE, "Illegal argument exception, double check the options passed to the PrintWriter object" + e.getMessage());
+        } catch (SecurityException e) {
+            logger.log(Level.SEVERE, "Security issues with local File System. Please check WRITE permission for this volume at " + productFile.toString() + "  and this user/groups.\nOriginal Error Msg:\n" + e.getMessage());
+        } catch (IOException e) {
+            var customException = new ProductManagerException("Saving product to file was unsuccessful due to I/O error." + e.getMessage(), e);
+            logger.log(Level.INFO, customException.getMessage());
+            throw customException;
+        }
 /*
             IllegalArgumentException – if options contains an invalid combination of options
             UnsupportedOperationException – if an unsupported option is specified
@@ -270,11 +268,7 @@ public class ProductManager {
             IOException – if an I/O error occurs
             SecurityException – In the case of the default provider, and a security manager is installed, the checkWrite method is invoked to check write access to the file. The checkDelete method is invoked to check delete access if the file is opened with*/
 
-            //   System.out.println(sb);
-        } finally {
-            writeLock.unlock();
-        }
-
+        //   System.out.println(sb);
     }
 
     public void printProduct(Predicate<Product> filter, Comparator<Product> sorter, String languageTag) {
@@ -409,6 +403,7 @@ public class ProductManager {
     }
 
     private void loadAllData() {
+        System.out.println("Attempting to load data from files");
         try {
             products = Files.list(dataFolder)
                     .filter(file -> file.getFileName().toString().startsWith("product"))
@@ -421,7 +416,9 @@ public class ProductManager {
                     + System.lineSeparator()
                     + e.getMessage());
         }
+        System.out.println("Start recalculations.");
         recalculateAverageProductRatingBasedOnAllReviews();
+        System.out.println("Done with all recalculations.");
     }
 
 
