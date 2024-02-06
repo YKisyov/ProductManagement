@@ -65,13 +65,13 @@ public class Shop {
 
         List<Callable<String>> clients = Stream.
                 generate(() -> client)
-                .limit(5)
+                .limit(16)
                 .collect(Collectors.toList());
 
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
         try {
             List<Future<String>> results = executorService.invokeAll(clients);
-            executorService.shutdown(); //Not thies will not halt the executor. It will only stop accepting new task.
+            executorService.shutdown(); //This will not halt the executor. It will only stop accepting new task.
             results.stream().forEach( result -> {
                 try {
                     System.out.println(result.get());
